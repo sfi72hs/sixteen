@@ -1,4 +1,5 @@
-# sixteen
+# Seventy-Two Hours of Science  72h(s)
+
 One of the things that SFI does best is to bring diverse people into an intimate setting, where the outcome is often a surprisingly fluid and quick generation of ideas that are both novel and powerful.  Our basic premise for the 72-Hours of Science is to test the limits of this strategy, both in terms of pace and multidisciplinarity: is it possible to go from a novel research question to a publication in 72 hours while involving scientists spanning all of the major disciplines? More specifically, can the postdocs of SFI see a project from conception to publication in an almost unreasonable amount of time? Will the outcome be important/useful science? What do we learn along the way in terms of what works and doesn’t? What are the outcomes following such an event?
 
 
