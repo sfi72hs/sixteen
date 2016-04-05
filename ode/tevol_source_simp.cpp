@@ -21,7 +21,7 @@
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_odeiv.h>
 
-#include "dyn_null_sis.hpp"
+#include "dyn_null_sis_seeking.hpp"
 
 using namespace std;
 
@@ -36,8 +36,8 @@ int main(int argc, const char *argv[]) {
 	double delta = atof(argv[3]);
 	std::string k_str = argv[4]; //initial connectivity
 	double k = atof(argv[4]);
-    double epsilon = 1e-4; //fixed, why not
-    const int dim = 5;
+    double epsilon = 1e-8; //fixed, why not
+    const int dim = 5; //number of equations
     Sparam param = {beta,r,delta,k,dim};
 
     // Integrator parameters
@@ -57,9 +57,9 @@ int main(int argc, const char *argv[]) {
 	y[0][1] = 1.0*epsilon; //I
 	double lastI = y[0][1];
 	double facteur = y[0][1]*(k+delta) / (y[0][1]*(k+delta)+y[0][0]*k);
-	y[0][2] = 1.0*(k*y[0][0]+(k+delta)*y[0][1])*(1.0-facteur)*(1.0-facteur); //SS
-	y[0][3] = 2.0*(k*y[0][0]+(k+delta)*y[0][1])*(1.0-facteur)*facteur; //SI
-	y[0][4] = 1.0*(k*y[0][0]+(k+delta)*y[0][1])*facteur*facteur; //II
+	y[0][2] = 0.5*(k*y[0][0]+(k+delta)*y[0][1])*(1.0-facteur)*(1.0-facteur); //SS
+	y[0][3] = 1.0*(k*y[0][0]+(k+delta)*y[0][1])*(1.0-facteur)*facteur; //SI
+	y[0][4] = 0.5*(k*y[0][0]+(k+delta)*y[0][1])*facteur*facteur; //II
 
     // Define GSL odeiv parameters
     const gsl_odeiv_step_type * step_type = gsl_odeiv_step_rkf45;

@@ -39,8 +39,8 @@ int dydt(double t, const double y[], double f[], void * param) {
     //Order: S I SS SI II (two of them are redundants, say S and SS, but I want to check conservation to spot mistakes)
     fref[0][0] = -p.beta*yref[0][3] + p.r*yref[0][1];
     fref[0][1] = p.beta*yref[0][3] - p.r*yref[0][1];
-    fref[0][2] = -p.beta*yref[0][3]*2.0*yref[0][2]/yref[0][0]+p.r*yref[0][3];
-    fref[0][3] = p.beta*yref[0][3]*(2.0*yref[0][2]/yref[0][0]-yref[0][3]/yref[0][0]-1)-p.r*yref[0][3]*p.k/(p.k+p.delta)+2.0*p.r*yref[0][4]+p.beta*p.delta*yref[0][3]*yref[0][0];
+    fref[0][2] = -p.beta*yref[0][3]*2.0*yref[0][2]/yref[0][0]+p.r*yref[0][3]*(p.k+yref[0][1]*p.delta)/(p.k+p.delta+yref[0][1]*p.delta);
+    fref[0][3] = p.beta*yref[0][3]*(2.0*yref[0][2]/yref[0][0]-yref[0][3]/yref[0][0]-1)-p.r*yref[0][3]*(p.k+yref[0][1]*p.delta)/(p.k+p.delta+yref[0][1]*p.delta)+2.0*p.r*yref[0][4]+p.beta*p.delta*yref[0][3]*yref[0][0];
     fref[0][4] = p.beta*yref[0][3]*(1+yref[0][3]/yref[0][0])-2.0*p.r*yref[0][4]+p.beta*p.delta*yref[0][3]*yref[0][1];
 	
 
