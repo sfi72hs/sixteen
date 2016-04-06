@@ -21,7 +21,7 @@
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_odeiv.h>
 
-#include "dyn_null_sis_seeking.hpp"
+#include "dyn_null_sis.hpp"
 
 using namespace std;
 
@@ -30,36 +30,38 @@ int main(int argc, const char *argv[]) {
 	//Model parameters	
 	std::string beta_str = argv[1]; //infection rate
 	double beta = atof(argv[1]);
-	std::string r_str = argv[2]; //recovery rate
+	std::string r_str = argv[2]; //recovery rate, only for files with sis not si in the tile
 	double r = atof(argv[2]);
 	std::string delta_str = argv[3]; //social benefit as a factor
 	double delta = atof(argv[3]);
-	std::string k_str = argv[4]; //initial connectivity
-	double k = atof(argv[4]);
-    double epsilon = 1e-8; //fixed, why not
+	std::string alpha_str = argv[4]; //aiming parameter between 0 and infinity
+	double alpha = atof(argv[4]);
+	std::string k_str = argv[5]; //initial connectivity
+	double k = atof(argv[5]);
+    double epsilon = 1e-6; //fixed, why not
     const int dim = 5; //number of equations
-    Sparam param = {beta,r,delta,k,dim};
+    Sparam param = {beta,r,delta,alpha,k,dim};
 
     // Integrator parameters
     double t = 0;
-    double dt = 1e-8;
-    double t_step = 100.0;
-    const double eps_abs = 1e-10;
-    const double eps_rel = 1e-10;
+    double dt = 1e-9;
+    double t_step = 10;
+    const double eps_abs = 1e-11;
+    const double eps_rel = 1e-11;
 
     // Setting initial conditions
     typedef boost::multi_array<double,2> mat_type;
     typedef mat_type::index index;
     mat_type y(boost::extents[1][dim]);
     fill(y.data(),y.data()+y.num_elements(),0.0);
-    // Initial conditions
+    // Initial conditions SHOULD BE DOUBLE CHECKED
 	y[0][0] = 1.0*(1.0-epsilon); //S
 	y[0][1] = 1.0*epsilon; //I
 	double lastI = y[0][1];
-	double facteur = y[0][1]*(k+delta) / (y[0][1]*(k+delta)+y[0][0]*k);
-	y[0][2] = 0.5*(k*y[0][0]+(k+delta)*y[0][1])*(1.0-facteur)*(1.0-facteur); //SS
-	y[0][3] = 1.0*(k*y[0][0]+(k+delta)*y[0][1])*(1.0-facteur)*facteur; //SI
-	y[0][4] = 0.5*(k*y[0][0]+(k+delta)*y[0][1])*facteur*facteur; //II
+	double facteur = y[0][1]*(k+delta+delta*y[0][1]) / (k+delta+delta*y[0][1]);
+	y[0][2] = 0.5*(k+delta+delta*y[0][1])*(1.0-facteur)*(1.0-facteur); //SS
+	y[0][3] = 1.0*(k+delta+delta*y[0][1])*(1.0-facteur)*facteur; //SI
+	y[0][4] = 0.5*(k+delta+delta*y[0][1])*facteur*facteur; //II
 
     // Define GSL odeiv parameters
     const gsl_odeiv_step_type * step_type = gsl_odeiv_step_rkf45;
@@ -69,13 +71,13 @@ int main(int argc, const char *argv[]) {
     gsl_odeiv_system sys = {dydt, NULL, dim, &param};
 	
 	// Output
-	ofstream output("timevolution.dat");
+	ofstream output("last_time_evolution.dat");
 	
 	//Integration
     int status(GSL_SUCCESS);
     double diff = 1.0;
     //for (double t_target = t+t_step; diff > 1e-6; t_target += t_step ) { //stop by difference
-    for (double t_target = t+t_step; t_target < 1e4; t_target += t_step ) { //stop by time
+    for (double t_target = t+t_step; t_target < 1e6; t_target += t_step ) { //stop by time
         while (t < t_target) {
             status = gsl_odeiv_evolve_apply (evolve,control,step,&sys,&t,t_target,&dt,y.data());
             if (status != GSL_SUCCESS) {
@@ -83,7 +85,7 @@ int main(int argc, const char *argv[]) {
                 break;
 			}
         } // end while
-        output << t << " " << y[0][0] << " " << y[0][1] << "\n";
+        output << t << " " << y[0][0] << " " << y[0][1] << " " << y[0][2] << " " << y[0][3]  << "\n";
         diff = abs(y[0][1] - lastI);
 	} //end while
     cout.flush();
