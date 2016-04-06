@@ -4,8 +4,9 @@ import scipy.stats
 
 def init_graph(N, graph_density):
     mx_init = np.random.random( (N,N) )
-    mx_init = 0.5*(mx_init+mx_init.T)
-    mx_init = mx_init < graph_density
+    mx_init = mx_init < (graph_density)
+    mx_init = np.tril(mx_init)
+    mx_init = mx_init + mx_init.T
     np.fill_diagonal(mx_init, 0)
     return mx_init
 
@@ -37,14 +38,15 @@ def run_rewire(mx_init, is_infected_init, benefit_function, opts={}):
     NUM_ITERS = opts.get('NUM_ITERS', 10000)  # number of iterations to run
     
     p_recovery = opts.get('p_recovery', 0.)   # probability of node recovering
-    p_transmit = opts.get('p_transmit', 0.1)  # probability of transmission across link, per each node's iteration
+    p_transmit = opts.get('p_transmit', 0.001)  # probability of transmission across link, per each node's iteration
     p_rewire   = opts.get('p_rewire'  , 0.5)  # probability of rewiring/adding, per node's iteration
 
-    do_add     = opts.get('do_add'   , False)      # add links ?
-    do_rewire  = opts.get('do_rewire', True)       # rewire links during rewiring?
-    do_null    = opts.get('do_null'  , False)  # allow null (benefit-neutral) rewiring? 
+    do_add     = opts.get('do_add'   , False)      # add links adaptive network change?
+    do_rewire  = opts.get('do_rewire', True)       # rewire links during adaptive network change?
+    do_null    = opts.get('do_null'  , False)  # allow null (benefit-neutral) rewiring.adding? 
     do_only_beneficial = opts.get('do_only_beneficial'  , True)  # only add/rewire if its benefit-enhancing
     
+    iterate_only_infected  = opts.get('iterate_only_infected', False)       # do spreading / adaptive network change only for infected noedes
     
     Ksteps    = None # 3
     do_only_beneficial = True
@@ -66,11 +68,11 @@ def run_rewire(mx_init, is_infected_init, benefit_function, opts={}):
                 prob_Nnewneighbors_willbe_infected[i] = scipy.stats.binom.pmf(i, num_neighs_noninfected, p_transmit)
 
         exp_benefit = (1-prob_willbe_infected) * \
-            sum([p*benefit_function(0, num_neighs_infected+newinfs, num_neighbors-newinfs, num_global_infected+newinfs-is_node_infected)
+            sum([p*benefit_function(0, num_neighs_infected+newinfs, num_neighs_noninfected-newinfs, num_global_infected+newinfs-is_node_infected)
             for newinfs, p in enumerate(prob_Nnewneighbors_willbe_infected) ])
         
         exp_benefit += prob_willbe_infected * \
-            sum([p*benefit_function(1, num_neighs_infected+newinfs, num_neighbors-newinfs, num_global_infected+newinfs+(1-is_node_infected))
+            sum([p*benefit_function(1, num_neighs_infected+newinfs, num_neighs_noninfected-newinfs, num_global_infected+newinfs+(1-is_node_infected))
             for newinfs, p in enumerate(prob_Nnewneighbors_willbe_infected) ])
         return exp_benefit
 
@@ -106,6 +108,8 @@ def run_rewire(mx_init, is_infected_init, benefit_function, opts={}):
     rewire_counts_list = []
     num_infected = []
     num_rewired  = []
+    mean_degree  = []
+    mean_degree_inf = []
     assortativity = []
 
     for iteration in range(int(NUM_ITERS)):
@@ -113,12 +117,17 @@ def run_rewire(mx_init, is_infected_init, benefit_function, opts={}):
             assortativity.append(get_inf_assortativity(mx, is_infected))
             
         rewire_counts_list.append([rewire_counts[rt] for rt in rewire_types])
-        
+        mean_degree.append(mx.sum(axis=0).mean())
+        mean_degree_inf.append(mx[is_infected,:].sum(axis=1).mean())
         num_global_infected = is_infected.sum()
         num_infected.append(num_global_infected)
         num_rewired.append(c_rewired)
         
-        node = np.random.choice(N)  # choose "ego" node to rewire
+        # choose "ego" node to rewire
+        if iterate_only_infected:
+            node = np.random.choice(np.flatnonzero(is_infected)) 
+        else:
+            node = np.random.choice(N)
 
         neighbors = mx[node,:]
         num_neighbors = neighbors.sum()
@@ -126,7 +135,7 @@ def run_rewire(mx_init, is_infected_init, benefit_function, opts={}):
         num_neighs_infected = neighbor_status.sum()
         num_neighs_noninfected = (~neighbor_status).sum()
         
-        if np.random.random() < p_rewire:
+        if (np.random.random() < p_rewire):
             #radiusK = (np.linalg.matrix_power(mxPlusIint, Ksteps) > 0).astype('int')
             #possible_switch_mx = radiusK - mxPlusIint
             if Ksteps is None:
@@ -154,7 +163,7 @@ def run_rewire(mx_init, is_infected_init, benefit_function, opts={}):
 
             curB = expected_benefit(is_infected[node], num_neighs_infected, num_neighs_noninfected, num_global_infected)
 
-            newBinf2noninf, newBnoninf2inf, newBnewinfedge, newBnewnoninfedge = -10e5, -10e5, -10e5, -10e5
+            newBinf2noninf, newBnoninf2inf, newBnewinfedge, newBnewnoninfedge = -np.inf, -np.inf, -np.inf, -np.inf
             # given we swap infected neighbor for non-infected neighbor
             if num_neighs_infected > 0 and num_radiusK_noninfected > 0:
                 newBinf2noninf = expected_benefit(is_infected[node], num_neighs_infected-1, num_neighs_noninfected+1, num_global_infected)
@@ -210,16 +219,16 @@ def run_rewire(mx_init, is_infected_init, benefit_function, opts={}):
                     prob_rewire = np.exp(log_ps)
                     prob_rewire /= prob_rewire.sum()
 
-                    prop_neigh_infected = float(num_neighs_infected)/num_neighbors
-                    prop_radiusK_infected = float(num_radiusK_infected)/num_radiusK
-                    #p_switch_inf2noninf = prop_neigh_infected*(1-prop_radiusK_infected)
-                    #p_switch_noninf2inf = (1-prop_neigh_infected)*prop_radiusK_infected
-                    #p_switch_same = 1 - p_switch_inf2noninf - p_switch_noninf2inf
-
                     rewire_action = np.random.choice(len(prob_rewire), p=prob_rewire)
 
                     assert(len(prob_rewire)==5)
                     if rewire_action == 0:
+                        prop_neigh_infected = (float(num_neighs_infected)/num_neighbors) if num_neighbors > 0 else 1
+                        prop_radiusK_infected = (float(num_radiusK_infected)/num_radiusK) if num_radiusK > 0 else 1 # TODO 
+                        #p_switch_inf2noninf = prop_neigh_infected*(1-prop_radiusK_infected)
+                        #p_switch_noninf2inf = (1-prop_neigh_infected)*prop_radiusK_infected
+                        #p_switch_same = 1 - p_switch_inf2noninf - p_switch_noninf2inf
+
                         prop_both_infected = (prop_neigh_infected*prop_radiusK_infected)
                         prop_both_infected = prop_both_infected/(prop_both_infected+(1-prop_neigh_infected)*(1-prop_radiusK_infected))
                         if np.random.random() < prop_both_infected:
@@ -248,7 +257,8 @@ def run_rewire(mx_init, is_infected_init, benefit_function, opts={}):
                         rewire_counts['%s+n' % ctype] += 1
 
                     if debug and iteration % 20 == 0:
-                        print is_infected[node], prob_rewire, num_neighs_noninfected, num_neighs_infected
+                        print is_infected[node], prob_rewire, num_neighs_noninfected, num_neighs_infected, num_radiusK_noninfected, num_radiusK_infected
+                        print newBnewinfedge, newBnewnoninfedge
                 
                     mx[node, node_to_rewire_to] = 1
                     mx[node_to_rewire_to, node] = 1
@@ -272,6 +282,18 @@ def run_rewire(mx_init, is_infected_init, benefit_function, opts={}):
             
             
         total_links = mx.sum()
+
+        SIlinks = mx[is_infected,:][:,~is_infected]
+        edge_targets = np.nonzero(SIlinks)[1]
+        if len(edge_targets):
+            edges_to_infect = np.random.random(len(edge_targets)) < p_transmit
+            #cedge = edges[np.random.choice(len(edges))]
+            not_infected_ixs = np.flatnonzero(~is_infected)
+            #print "Setting ",is_infected[not_infected_ixs[cedge[1]]]
+            #print is_infected[not_infected_ixs[edge_targets[edges_to_infect]]]
+            is_infected[not_infected_ixs[edge_targets[edges_to_infect]]] = True
+
+        """
         if is_infected[node] and num_neighs_noninfected > 0:
             #print "HER", num_neighs_noninfected
             #oldB = benefit_function(is_infected[i], num_neighs_infected, num_neighs_noninfected, num_global_infected)
@@ -283,19 +305,26 @@ def run_rewire(mx_init, is_infected_init, benefit_function, opts={}):
             prob_transmit = p_transmit # * (num_neighbors / float(total_links))
 
             neighs_to_infect = np.random.random(num_neighs_noninfected) < prob_transmit
+            if iteration % 100 == 0: # debug:
+                #print iteration, "Infected %d -> %s" % (node, neighs_noninfected_ixs[neighs_to_infect])
+                print iteration,  "degree=", num_neighbors, "num_infected=", neighs_to_infect.sum()
+                print num_neighs_noninfected, neighs_to_infect
+                print 'mean inf degree:', mx[is_infected,:].sum(axis=0).mean()
+
             if neighs_to_infect.any():
                 neighbor_ixs = np.flatnonzero(neighbors)
                 neighs_noninfected_ixs = neighbor_ixs[~neighbor_status]
                 is_infected[neighs_noninfected_ixs[neighs_to_infect]] = True
-                if debug:
-                    print iteration, "Infected %d -> %s" % (node, neighs_noninfected_ixs[neighs_to_infect])
-            
+        """
+
         if np.random.random() < p_recovery:
             is_infected[i] = False
 
     return dict(
         num_infected = num_infected, 
         num_rewired  = num_rewired,
+        mean_degree = mean_degree,
+        mean_degree_inf = mean_degree_inf,
         assortativity = assortativity,
         is_infected = is_infected,
         mx = mx,
