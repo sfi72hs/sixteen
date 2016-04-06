@@ -16,6 +16,7 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
+#include <iomanip>
 
 #include <boost/multi_array.hpp>
 #include <gsl/gsl_errno.h>
@@ -29,9 +30,9 @@ int main(int argc, const char *argv[]) {
 		 
 	//Model parameters	
 	std::string beta_str = argv[1]; //infection rate
-	double beta = atof(argv[1]);
-	std::string r_str = argv[2]; //recovery rate, only for files with sis not si in the tile
-	double r = atof(argv[2]);
+	double beta = pow(10,-atof(argv[1]));
+	std::string r_str = argv[2]; //recovery rate, only for files with sis not si in the title
+	double r = pow(10,-atof(argv[2]));//atof(argv[2]);
 	std::string delta_str = argv[3]; //social benefit as a factor
 	double delta = atof(argv[3]);
 	std::string alpha_str = argv[4]; //aiming parameter between 0 and infinity
@@ -57,11 +58,12 @@ int main(int argc, const char *argv[]) {
     // Initial conditions SHOULD BE DOUBLE CHECKED
 	y[0][0] = 1.0*(1.0-epsilon); //S
 	y[0][1] = 1.0*epsilon; //I
+    double avgdeg=0.5*k+delta*y[0][1];
 	double lastI = y[0][1];
-	double facteur = y[0][1]*(k+delta+delta*y[0][1]) / (k+delta+delta*y[0][1]);
-	y[0][2] = 0.5*(k+delta+delta*y[0][1])*(1.0-facteur)*(1.0-facteur); //SS
-	y[0][3] = 1.0*(k+delta+delta*y[0][1])*(1.0-facteur)*facteur; //SI
-	y[0][4] = 0.5*(k+delta+delta*y[0][1])*facteur*facteur; //II
+	double facteur = y[0][1]*(k+delta+delta*y[0][1]) / (k+2.*delta*y[0][1]);
+	y[0][2] = avgdeg*0.5*(1.0-facteur)*(1.0-facteur); //SS
+	y[0][3] = avgdeg*1.0*(1.0-facteur)*facteur; //SI
+	y[0][4] = avgdeg*0.5*facteur*facteur; //II
 
     // Define GSL odeiv parameters
     const gsl_odeiv_step_type * step_type = gsl_odeiv_step_rkf45;
@@ -71,7 +73,12 @@ int main(int argc, const char *argv[]) {
     gsl_odeiv_system sys = {dydt, NULL, dim, &param};
 	
 	// Output
-	ofstream output("last_time_evolution.dat");
+	//ofstream output("last_time_evolution.dat");
+
+
+    ofstream output;
+    output.open(("data/dyn_b"+beta_str+"r"+r_str+"d"+delta_str+"a"+alpha_str+"k"+k_str +"_sis.dat").c_str());
+
 	
 	//Integration
     int status(GSL_SUCCESS);
@@ -85,7 +92,7 @@ int main(int argc, const char *argv[]) {
                 break;
 			}
         } // end while
-        output << t << " " << y[0][0] << " " << y[0][1] << " " << y[0][2] << " " << y[0][3]  << "\n";
+        output  << t << " " << y[0][0] << " " << y[0][1] << " " << y[0][2] << " " << y[0][3]  <<" "<<y[0][4]<< "\n";
         diff = abs(y[0][1] - lastI);
 	} //end while
     cout.flush();
