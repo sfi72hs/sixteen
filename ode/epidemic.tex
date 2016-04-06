@@ -78,35 +78,46 @@
 \subsection*{The model}
 Consider a network as a set of nodes with a variable attached on them defining their epidemic state. A node can either be infected, $I$, or susceptible, $S$. We consider the SIS model where there can be transitions from any state to any other state. These transitions are regulated by two parameters:
 \begin{itemize}
-\item an infection transmission rate $\beta$ if a susceptible node is infected by an infected node; 
+\item an infection transmission rate $\beta$ for a susceptible node to be infected by a neighboring infected node; 
 \item a recovery rate $r$ for an infected node to become susceptible.
-\item In addition, we assume that an infected node will generate $\Delta$ new links upon infection, these can be targeted to any node, regardless their state;
-\item $\al$ represents the probability that, in creating new links, an infected nodes selects susceptible nodes ($\al=0$), randomly ($\al=1$) or infected nodes ($\al>1$).
+\item In the absence of infected nodes, we assume that the average degree of a node is $k_0$.
+\item In addition, we assume that an infected node will generate $\Delta$ new links upon infection, these can be made to any node of either state;
+\item $\al$ represents the bias for what type of node is linked to by the new links. Either susceptible nodes are always selected ($\al=0$), susceptible
+    nodes are selected with preference ($0<\al<1$), all nodes are selected uniformly ($\al=1$), or infected nodes are selected with preference ($\al>1$).
+\item If an infected node recovers, it loses $\Delta$ edges at random.
 \end{itemize}
 
-Define $S$ and $I$ as the ratio of susceptible and infected nodes respectively; by definition $S+I=1$. Also, $[SI]$ is the number of $S \ra I$ edges, and so on for the other remaining three combinations.
+Define $S$ and $I$ as the ratio of susceptible and infected nodes respectively to the total population.
+By definition $S+I=1$. Let $[SI]$ be the number of $S \ra I$ edges normalized by the total population size,
+and so on for the other two combinations.
 The differential equations governing this process are:
 \bea
-\dot{I}&=& \beta [SI] -rI \\
+\dot{I}=-\dot{S}&=& \beta [SI] -rI \\
 \dot{[SS]}&=& -\beta \,[SI]\, 2\f{[SS]}{S} +r [SI] \bup{\f{k_{0}+I \Delta}{k_{0}+I \Delta +\Delta}} \\
 \dot{[SI]}&=& \beta[SI] \rup{ 2\f{[SS]}{S} -\f{[SI]}{S}-1} -r[SI] +\beta[SI]\dl \blue{\f{S}{S+I\al} }+2\,r\,[II]  \bup{\f{k_{0}+I \Delta}{k_{0}+I \Delta +\Delta}} \\
 \dot{[II]}&=& \beta[SI] \rup{\f{[SI]}{S} +1} +\beta\,[SI]\, \dl  \blue{\f{I\al}{S+I\al}} -2r [II]
 \eea
+We can reduce this system to only three variables by using the following equations for node and edge total
+\bea \label{eq:closure}
+S + I &=& 1\\
+[SS]+[SI]+[II] = \tfrac12 k_0 + I\dl
+\eea
 
-These equations are complemented with the average degrees of an infected node $\avg{k_{I}}$, of a susceptible node $\avg{k_{S}}$ and the total expected number of links $E$:
-
+The average degrees of an infected node $\avg{k_{I}}$ and of susceptible node $\avg{k_{S}}$ are
 \bea
 \avg{k_{I}}&=& k_{0}+\dl +I\dl\\
-\avg{k_{S}}&=& k_{0}+I \dl \\
-E&=&\f{k_{0}}{2} +I\dl = [SS]+[II]+2[SI]
+\avg{k_{S}}&=& k_{0}+I \dl
 \eea
-where $k_{0}$ would be the average degree in case of no link generation. 
 
-A variant of the model considers the case where an infected node keeps generating $\dl$ new edges at each time step, not only at infection time. In this case in the last two equations one replaces the term $[SI]$ to $I$:
+We also consider a variant where an infected node keeps generating $\dl$ new edges per unit time,
+not only at infection time. In this variant we do not consider recovery of an infected node.
 \bea
-\dot{[SI]}&=& \beta[SI] \rup{ 2\f{[SS]}{S} -\f{[SI]}{S}-1} -r[SI] +\beta \,\red{I}\dl  \f{S}{S+I\al} +2\,r\,[II]  \bup{\f{k_{0}+I \Delta}{k_{0}+I \Delta +\Delta}} \\
-\dot{[II]}&=& \beta[SI] \rup{\f{[SI]}{S} +1} +\beta\,\red{I}\, \dl \f{I\al}{S+I\al} -2r [II]
+\dot{I}=-\dot{S}&=& \beta [SI] \\
+\dot{[SS]}&=& -\beta \,[SI]\, 2\f{[SS]}{S} \\
+\dot{[SI]}&=& \beta[SI] \rup{ 2\f{[SS]}{S} -\f{[SI]}{S}-1} -r[SI] + I \dl \blue{\f{S}{S+I\al} } \\
+\dot{[II]}&=& \beta[SI] \rup{\f{[SI]}{S} +1} +I \dl  \blue{\f{I\al}{S+I\al}}
 \eea
+In this variant, we do not have an equation for the total number of edges and we cannot reduce the system to only three variables.
 
 \bibliography{bibliography}{}
 \bibliographystyle{unsrt}
