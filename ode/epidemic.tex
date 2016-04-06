@@ -1,79 +1,12 @@
-
 \documentclass[11pt,final]{article}
-\usepackage[english]{babel}
-%\usepackage[latin1]{inputenc}
-\usepackage[utf8]{inputenc}
-\usepackage{bbold}
 \usepackage{amsmath}
-%\usepackage{amssymb} % for \grtsym
-\usepackage{comment}
-\usepackage[left=2.cm,right=2.cm]{geometry}
-
-\usepackage{color}
-\usepackage{graphicx}
-\usepackage{float}
-\usepackage{caption}
-\usepackage{subcaption}
-\graphicspath{{./Images/}} % Directory in which figures are stored
+\usepackage{amssymb}
 
 %%%%%%%%%%%%%%%%%%%
-\DeclareMathOperator*{\argmax}{arg\,max}
-\newcommand{\argmin}{arg\,min}
-\newcommand{\cyan}[1]{{\color{cyan}{#1}\normalcolor}}
-\newcommand{\orange}[1]{{\color{orange}{#1}\normalcolor}}
-\newcommand{\yellow}[1]{{\color{yellow}{#1}\normalcolor}}
-\newcommand{\red}[1]{{\color{red}{#1}\normalcolor}}
-\newcommand{\magenta}[1]{{\color{magenta}{#1}\normalcolor}}
-\newcommand{\green}[1]{{\color{green}{#1}\normalcolor}}
-\newcommand{\blue}[1]{{\color{blue}{#1}\normalcolor}}
-
-\newcommand{\vv} {{\bm v}}
-\newcommand{\be}{\begin{equation}} 
-\newcommand{\ee}{\end{equation}}  
-\newcommand{\bea}{\begin{eqnarray}}
-\newcommand{\eea}{\end{eqnarray}}
-
-\newcommand{\cD}{{\cal D}} 
-\newcommand{\cL}{{\cal L}} 
-\newcommand{\cM}{{\cal M}} 
-\newcommand{\cN}{{\cal N}} 
-\newcommand{\cO}{{\cal O}} 
-\newcommand{\cU}{{\cal U}} 
-\newcommand{\cW}{{\cal W}} 
-\newcommand{\cZ}{{\cal Z}} 
-
-\let\vaccent=\v % rename builtin command \v{} to \vaccent{}
-\renewcommand{\v}[1]{\mathbf{#1}} % for vectors
-
-%\newcommand{\vone} {{\bm 1}}
-%\newcommand{\vv} {{\bm v}}
-%\newcommand{\vw} {{\bm w}}
-\newcommand{\ra}{\rightarrow}
-\newcommand{\f}[2]{\dfrac{#1}{#2}}
-\newcommand{\avg}[1]{\left\langle #1 \right\rangle} % for average
-\let\setunion=\cup
-\renewcommand{\cup}[1]{\left\{#1\right\}}
-\let\oldt=\t
-\renewcommand{\t}[1]{\tilde{#1}}
-\newcommand{\w}{\omega}
-\newcommand{\bb}[1]{\mathbf{#1}}
-\newcommand{\s}{\sigma}
-\newcommand{\tm}{\times}
-\newcommand{\al}{\alpha}
-\newcommand{\dl}{\Delta}
-\renewcommand{\b}[1]{\bar{#1}}
-\newcommand{\h}[1]{\hat{#1}}
-
-\let\setunion=\cup
-\renewcommand{\cup}[1]{\left\{#1\right\}}
-\newcommand{\rup}[1]{\left(#1\right)}
-\newcommand{\bup}[1]{\left[#1\right]}
-
-\DeclareMathOperator{\arctanh}{arctanh}
 
 \begin{document}
 
-\section*{Beneficial epidemic transmission with link generation.}
+\section*{Beneficial epidemic transmission with link generation}
 
 \subsection*{The model}
 Consider a network as a set of nodes with a variable attached on them defining their epidemic state. A node can either be infected, $I$, or susceptible, $S$. We consider the SIS model where there can be transitions from any state to any other state. These transitions are regulated by two parameters:
@@ -82,41 +15,49 @@ Consider a network as a set of nodes with a variable attached on them defining t
 \item a recovery rate $r$ for an infected node to become susceptible.
 \item In the absence of infected nodes, we assume that the average degree of a node is $k_0$.
 \item In addition, we assume that an infected node will generate $\Delta$ new links upon infection, these can be made to any node of either state;
-\item $\al$ represents the bias for what type of node is linked to by the new links. Either susceptible nodes are always selected ($\al=0$), susceptible
-    nodes are selected with preference ($0<\al<1$), all nodes are selected uniformly ($\al=1$), or infected nodes are selected with preference ($\al>1$).
+\item $\alpha$ represents the bias for what type of node is linked to by the new links. Either susceptible nodes are always selected ($\alpha=0$), susceptible
+    nodes are selected with preference ($0<\alpha<1$), all nodes are selected uniformly ($\alpha=1$), or infected nodes are selected with preference ($\alpha>1$).
 \item If an infected node recovers, it loses $\Delta$ edges at random.
 \end{itemize}
 
 Define $S$ and $I$ as the ratio of susceptible and infected nodes respectively to the total population.
-By definition $S+I=1$. Let $[SI]$ be the number of $S \ra I$ edges normalized by the total population size,
+By definition $S+I=1$. Let $[SI]$ be the number of $S \to I$ edges normalized by the total population size,
 and so on for the other two combinations.
 The differential equations governing this process are:
-\bea
-\dot{I}=-\dot{S}&=& \beta [SI] -rI \\
-\dot{[SS]}&=& -\beta \,[SI]\, 2\f{[SS]}{S} +r [SI] \bup{\f{k_{0}+I \Delta}{k_{0}+I \Delta +\Delta}} \\
-\dot{[SI]}&=& \beta[SI] \rup{ 2\f{[SS]}{S} -\f{[SI]}{S}-1} -r[SI] +\beta[SI]\dl \blue{\f{S}{S+I\al} }+2\,r\,[II]  \bup{\f{k_{0}+I \Delta}{k_{0}+I \Delta +\Delta}} \\
-\dot{[II]}&=& \beta[SI] \rup{\f{[SI]}{S} +1} +\beta\,[SI]\, \dl  \blue{\f{I\al}{S+I\al}} -2r [II]
-\eea
+\begin{equation}
+    \begin{aligned}
+\dot{I}&=-\dot{S}= \beta [SI] -rI \\
+\dot{[SS]}&= -\beta \,[SI]\, \frac{2[SS]}{S} +r [SI] \left(\frac{k_{0}+I \Delta}{k_{0}+I \Delta +\Delta}\right) \\
+\dot{[SI]}&= \beta[SI] \left( 2\frac{[SS]}{S} -\frac{[SI]}{S}-1 \right) -r[SI] +\beta[SI]\Delta \frac{S}{S+I\alpha}+2\,r\,[II]  \left(\frac{k_{0}+I \Delta}{k_{0}+I \Delta +\Delta}\right) \\
+\dot{[II]}&= \beta[SI] \left(\frac{[SI]}{S} +1\right) +\beta\,[SI]\, \Delta \frac{I\alpha}{S+I\alpha} -2r [II]
+    \end{aligned}
+\end{equation}
 We can reduce this system to only three variables by using the following equations for node and edge total
-\bea \label{eq:closure}
-S + I &=& 1\\
-[SS]+[SI]+[II] = \tfrac12 k_0 + I\dl
-\eea
+\begin{equation}\label{eq:closure}
+    \begin{aligned}
+S + I &= 1\\
+[SS]+[SI]+[II] &= \tfrac12 k_0 + I\Delta
+    \end{aligned}
+\end{equation}
 
-The average degrees of an infected node $\avg{k_{I}}$ and of susceptible node $\avg{k_{S}}$ are
-\bea
-\avg{k_{I}}&=& k_{0}+\dl +I\dl\\
-\avg{k_{S}}&=& k_{0}+I \dl
-\eea
+The average degrees of an infected node $\langle k_{I}\rangle$ and of susceptible node $\langle k_{S}\rangle$ are
+\begin{equation}
+    \begin{aligned}
+\langle k_{I}\rangle&= k_{0}+\Delta +I\Delta\\
+\langle k_{S}\rangle&= k_{0}+I \Delta
+    \end{aligned}
+\end{equation}
 
-We also consider a variant where an infected node keeps generating $\dl$ new edges per unit time,
+We also consider a variant where an infected node keeps generating $\Delta$ new edges per unit time,
 not only at infection time. In this variant we do not consider recovery of an infected node.
-\bea
-\dot{I}=-\dot{S}&=& \beta [SI] \\
-\dot{[SS]}&=& -\beta \,[SI]\, 2\f{[SS]}{S} \\
-\dot{[SI]}&=& \beta[SI] \rup{ 2\f{[SS]}{S} -\f{[SI]}{S}-1} -r[SI] + I \dl \blue{\f{S}{S+I\al} } \\
-\dot{[II]}&=& \beta[SI] \rup{\f{[SI]}{S} +1} +I \dl  \blue{\f{I\al}{S+I\al}}
-\eea
+\begin{equation}
+    \begin{aligned}
+\dot{I}=-\dot{S}&= \beta [SI] \\
+\dot{[SS]}&= -\beta \,[SI]\, 2\frac{[SS]}{S} \\
+\dot{[SI]}&= \beta[SI] \left( 2\frac{[SS]}{S} -\frac{[SI]}{S}-1 \right) -r[SI] + I \Delta \frac{S}{S+I\alpha} \\
+\dot{[II]}&= \beta[SI] \left( \frac{[SI]}{S} +1 \right) +I \Delta \frac{I\alpha}{S+I\alpha}
+    \end{aligned}
+\end{equation}
 In this variant, we do not have an equation for the total number of edges and we cannot reduce the system to only three variables.
 
 \bibliography{bibliography}{}
