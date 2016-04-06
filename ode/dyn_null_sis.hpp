@@ -42,8 +42,8 @@ int dydt(double t, const double y[], double f[], void * param) {
     fref[0][0] = -p.beta*yref[0][3] + p.r*yref[0][1];
     fref[0][1] = p.beta*yref[0][3] - p.r*yref[0][1];
     fref[0][2] = -p.beta*yref[0][3]*2.0*yref[0][2]/yref[0][0]+p.r*yref[0][3]*(p.k+yref[0][1]*p.delta)/(p.k+p.delta+yref[0][1]*p.delta);
-    fref[0][3] = p.beta*yref[0][3]*(2.0*yref[0][2]/yref[0][0]-yref[0][3]/yref[0][0]-1)-p.r*yref[0][3]+2.0*p.r*yref[0][4]*(p.k+yref[0][1]*p.delta)/(p.k+p.delta+yref[0][1]*p.delta)+p.beta*p.delta*yref[0][3]*yref[0][0]/(yref[0][0]+alpha*yref[0][1]);
-    fref[0][4] = p.beta*yref[0][3]*(1.0+yref[0][3]/yref[0][0])-2.0*p.r*yref[0][4]+p.beta*p.delta*yref[0][3]*alpha*yref[0][1]/(yref[0][0]+alpha*yref[0][1]);
+    fref[0][3] = p.beta*yref[0][3]*(2.0*yref[0][2]/yref[0][0]-yref[0][3]/yref[0][0]-1)-p.r*yref[0][3]+2.0*p.r*yref[0][4]*(p.k+yref[0][1]*p.delta)/(p.k+p.delta+yref[0][1]*p.delta)+p.beta*p.delta*yref[0][3]*yref[0][0]/(yref[0][0]+p.alpha*yref[0][1]);
+    fref[0][4] = p.beta*yref[0][3]*(1.0+yref[0][3]/yref[0][0])-2.0*p.r*yref[0][4]+p.beta*p.delta*yref[0][3]*p.alpha*yref[0][1]/(yref[0][0]+p.alpha*yref[0][1]);
 	
 
     return GSL_SUCCESS;
