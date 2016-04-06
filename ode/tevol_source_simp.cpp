@@ -38,23 +38,23 @@ int main(int argc, const char *argv[]) {
 	double alpha = atof(argv[4]);
 	std::string k_str = argv[5]; //initial connectivity
 	double k = atof(argv[5]);
-    double epsilon = 1e-4; //fixed, why not
+    double epsilon = 1e-6; //fixed, why not
     const int dim = 5; //number of equations
     Sparam param = {beta,r,delta,alpha,k,dim};
 
     // Integrator parameters
     double t = 0;
     double dt = 1e-9;
-    double t_step = 0.1;
-    const double eps_abs = 1e-12;
-    const double eps_rel = 1e-12;
+    double t_step = 10;
+    const double eps_abs = 1e-11;
+    const double eps_rel = 1e-11;
 
     // Setting initial conditions
     typedef boost::multi_array<double,2> mat_type;
     typedef mat_type::index index;
     mat_type y(boost::extents[1][dim]);
     fill(y.data(),y.data()+y.num_elements(),0.0);
-    // Initial conditions
+    // Initial conditions SHOULD BE DOUBLE CHECKED
 	y[0][0] = 1.0*(1.0-epsilon); //S
 	y[0][1] = 1.0*epsilon; //I
 	double lastI = y[0][1];
@@ -71,7 +71,7 @@ int main(int argc, const char *argv[]) {
     gsl_odeiv_system sys = {dydt, NULL, dim, &param};
 	
 	// Output
-	ofstream output("timevolution.dat");
+	ofstream output("last_time_evolution.dat");
 	
 	//Integration
     int status(GSL_SUCCESS);
