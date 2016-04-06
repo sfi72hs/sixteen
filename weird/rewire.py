@@ -34,11 +34,18 @@ def run_rewire(mx_init, is_infected_init, benefit_function, opts={}):
     )
 
     """
+    N = len(is_infected_init)
+
+    allowed_vals=['beta','NUM_ITERS', 'p_recovery', 'p_transmit','p_rewire','do_add','do_rewire','do_null','do_only_beneficial','iterate_only_infected']
+    for k in opts:
+        if k not in allowed_vals:
+            raise Exception('Dont understand opt %s' % k)
+            
     beta       = opts.get('beta', 1)          # strength of beta (influence of benefit on rewiring choices)
     NUM_ITERS = opts.get('NUM_ITERS', 10000)  # number of iterations to run
     
     p_recovery = opts.get('p_recovery', 0.)   # probability of node recovering
-    p_transmit = opts.get('p_transmit', 0.001)  # probability of transmission across link, per each node's iteration
+    p_transmit = opts.get('p_transmit', 1.0/N)  # probability of transmission across link, per each node's iteration
     p_rewire   = opts.get('p_rewire'  , 0.5)  # probability of rewiring/adding, per node's iteration
 
     do_add     = opts.get('do_add'   , False)      # add links adaptive network change?
@@ -76,7 +83,6 @@ def run_rewire(mx_init, is_infected_init, benefit_function, opts={}):
             for newinfs, p in enumerate(prob_Nnewneighbors_willbe_infected) ])
         return exp_benefit
 
-    N = len(is_infected_init)
     assert(N == mx_init.shape[0])
 
     is_infected = is_infected_init.copy()
@@ -86,9 +92,9 @@ def run_rewire(mx_init, is_infected_init, benefit_function, opts={}):
     debug     = False
 
     mx = mx_init.copy()
-    mxPlusI = mx.copy()
-    np.fill_diagonal(mxPlusI, True)
-    mxPlusIint = mxPlusI.astype('int')
+    #mxPlusI = mx.copy()
+    #np.fill_diagonal(mxPlusI, True)
+    #mxPlusIint = mxPlusI.astype('int')
 
     meanK = mx.sum(axis=0).mean()
     #print "MEAN K: %0.5f" % meanK
@@ -270,19 +276,22 @@ def run_rewire(mx_init, is_infected_init, benefit_function, opts={}):
                     if debug:
                         print "Rewiring %d to %d" % (node_to_unwire_from, node_to_rewire_to)
 
-                    mxPlusI = mx.copy()
-                    np.fill_diagonal(mxPlusI, True)
-                    mxPlusIint = mxPlusI.astype('int')
+                    #mxPlusI = mx.copy()
+                    #np.fill_diagonal(mxPlusI, True)
+                    #mxPlusIint = mxPlusI.astype('int')
 
-                    neighbors = mx[node,:]
-                    num_neighbors = neighbors.sum()
-                    neighbor_status = is_infected[neighbors]
-                    num_neighs_infected = neighbor_status.sum()
-                    num_neighs_noninfected = (~neighbor_status).sum()     
+                    #neighbors = mx[node,:]
+                    #num_neighbors = neighbors.sum()
+                    #neighbor_status = is_infected[neighbors]
+                    #num_neighs_infected = neighbor_status.sum()
+                    #num_neighs_noninfected = (~neighbor_status).sum()     
             
             
-        total_links = mx.sum()
+        if is_infected[node] and np.random.random() < p_recovery:
+            is_infected[node] = False
 
+        #total_links = mx.sum()
+        # Transmission
         SIlinks = mx[is_infected,:][:,~is_infected]
         edge_targets = np.nonzero(SIlinks)[1]
         if len(edge_targets):
@@ -316,9 +325,6 @@ def run_rewire(mx_init, is_infected_init, benefit_function, opts={}):
                 neighs_noninfected_ixs = neighbor_ixs[~neighbor_status]
                 is_infected[neighs_noninfected_ixs[neighs_to_infect]] = True
         """
-
-        if np.random.random() < p_recovery:
-            is_infected[i] = False
 
     return dict(
         num_infected = num_infected, 

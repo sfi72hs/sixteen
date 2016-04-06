@@ -1,0 +1,9 @@
+N=1000
+Initial density 0.005
+% initial infected: 0.01
+no wiring
+no adding
+p_transmit = .00005
+beta = 5
+benefit_function  self_state * neighs_noninfected
+iterate_only_infected = True
