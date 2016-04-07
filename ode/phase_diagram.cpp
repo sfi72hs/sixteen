@@ -55,7 +55,7 @@ int main(int argc, const char *argv[]) {
     ofstream output;
     output.open(("data/phase_diag_d"+delta_str+"a"+alpha_str+"k"+k_str +"_sis.dat").c_str(),ios::app);
 
-    for(double q=0.5;q<1.5;q+=0.05){
+    for(double q=0.3;q<0.6;q+=0.01){
         t=0.;
         beta=q*r;
         Sparam param = {beta,r,delta,alpha,k,dim};
@@ -83,14 +83,12 @@ int main(int argc, const char *argv[]) {
     	
     	// Output
     	//ofstream output("last_time_evolution.dat");
-
-
     	
     	//Integration
         int status(GSL_SUCCESS);
-        double diff = 1.0;
-        //for (double t_target = t+t_step; diff > 1e-6; t_target += t_step ) { //stop by difference
-        for (double t_target = t+t_step; t_target <= maxT; t_target += t_step ) { //stop by time
+        double diff = 1.0;double t_target;
+        for ( t_target = t+t_step; diff > 1e-10; t_target += t_step ) { //stop by difference
+        //for (double t_target = t+t_step; t_target <= maxT; t_target += t_step ) { //stop by time
             while (t < t_target) {
                 status = gsl_odeiv_evolve_apply (evolve,control,step,&sys,&t,t_target,&dt,y.data());
                 if (status != GSL_SUCCESS) {
@@ -98,11 +96,13 @@ int main(int argc, const char *argv[]) {
                     break;
     			}
             } // end while
-            //cout  << t << " " << y[0][0] << " " << y[0][1] << " " << y[0][2] << " " << y[0][3]  <<" "<<y[0][4]<< "\n";
             diff = abs(y[0][1] - lastI);
+            cout  << t << " " <<q<<" "<< y[0][0] << " " << y[0][1] << " " << y[0][2] << " " << y[0][3]  <<" "<<y[0][4]<<" "<<diff<< "\n";
+            
+            lastI=y[0][1];
     	} //end for in time
    
-        output  << q<<" "<<y[0][1] <<" "<<y[0][2] << " " << y[0][3]  <<" "<<y[0][4]<< "\n";
+        output  << q<<" "<<y[0][1] <<" "<<y[0][2] << " " << y[0][3]  <<" "<<y[0][4]<<" "<<t_target<< "\n";
         cout.flush();
         // Free memory
         gsl_odeiv_evolve_free(evolve);
