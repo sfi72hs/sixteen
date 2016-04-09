@@ -19,6 +19,7 @@ struct Sparam {
     const double alpha;
     const double k;
     const int dim;
+    std::ofstream *out;
 }; // parameter structure
 
 //********** function dydt definition **************************************************************
@@ -42,9 +43,9 @@ int dydt(double t, const double y[], double f[], void * param) {
     fref[0][0] = -p.beta*yref[0][3];
     fref[0][1] = p.beta*yref[0][3];
     fref[0][2] = -p.beta*yref[0][3]*2.0*yref[0][2]/yref[0][0];
-    fref[0][3] = p.beta*yref[0][3]*(2.0*yref[0][2]/yref[0][0]-yref[0][3]/yref[0][0]-1)+p.delta*yref[0][1]*yref[0][0]/(yref[0][0]+alpha*yref[0][1]);
-    fref[0][4] = p.beta*yref[0][3]*(1+yref[0][3]/yref[0][0])+p.delta*yref[0][1]*alpha*yref[0][1]/(yref[0][0]+alpha*yref[0][1]);
-	
+    fref[0][3] = p.beta*yref[0][3]*(2.0*yref[0][2]/yref[0][0]-yref[0][3]/yref[0][0]-1)+p.delta*yref[0][1]*yref[0][0]/(yref[0][0]+p.alpha*yref[0][1]);
+    fref[0][4] = p.beta*yref[0][3]*(1+yref[0][3]/yref[0][0])+p.delta*yref[0][1]*p.alpha*yref[0][1]/(yref[0][0]+p.alpha*yref[0][1]);
+	*(p.out)<<fref[0][1] /yref[0][1]<<" ";
 
     return GSL_SUCCESS;
 
