@@ -16,6 +16,34 @@ def get_inf_assortativity(mx, is_infected):
     nx.set_node_attributes(G, "infected", dict(enumerate(is_infected)))
     return nx.attribute_assortativity_coefficient(G, 'infected')
 
+def run_SI(mx_init, is_infected_init, beta, nsteps):
+    mx = mx_init.copy()
+    is_infected = is_infected_init.copy()
+    num_infected = []
+    linktypes = []
+    for iteration in range(int(nsteps)):
+        SIlinks = mx[is_infected,:][:,~is_infected]
+        i,j,v = ss.find(SIlinks)
+        edge_targets=j[np.flatnonzero(v)]
+        #edge_targets = j # np.nonzero(SIlinks)[1]
+        if len(edge_targets):
+            edges_to_infect = np.random.random(len(edge_targets)) < beta
+            not_infected_ixs = np.flatnonzero(~is_infected)
+            cix = not_infected_ixs[edge_targets[edges_to_infect]]
+            #print len(cix) - len(np.unique(cix))
+            is_infected[cix] = True
+            #is_infected[edge_targets[edges_to_infect]] = True
+        num_infected.append(is_infected.sum())
+        linktypes.append([
+                2*mx[is_infected,:][:,~is_infected].sum(),
+                mx[~is_infected,:][:,~is_infected].sum(),
+                mx[is_infected,:][:,is_infected].sum()])
+        #print len(edge_targets), sum(is_infected), len(edge_targets)/float(sum(is_infected)), len(cix), len(cix)/float(mx.shape[0])
+        #return len(cix)/float(mx.shape[0])
+        
+    return num_infected, linktypes
+
+            
 def run_rewire(mx_init, is_infected_init, benefit_function, opts={}):
     """
     # Parameters:
@@ -37,13 +65,12 @@ def run_rewire(mx_init, is_infected_init, benefit_function, opts={}):
     """
     N = len(is_infected_init)
 
-    allowed_vals=['beta','NUM_ITERS', 'p_recovery', 
-                  'p_transmit','p_rewire','do_add','do_rewire','do_null','do_only_beneficial','iterate_only_infected','save_assortativity']
+    allowed_vals=['strength','NUM_ITERS', 'p_recovery', 'save_mxs','save_is_infected', 'p_transmit','p_rewire','do_add','do_rewire','do_null','do_only_beneficial','iterate_only_infected','save_assortativity']
     for k in opts:
         if k not in allowed_vals:
             raise Exception('Dont understand opt %s' % k)
 
-    beta       = opts.get('beta', 1)          # strength of beta (influence of benefit on rewiring choices)
+    strength  = opts.get('strength', 1)          # strength of influence of benefit on rewiring choices
     NUM_ITERS = opts.get('NUM_ITERS', 10000)  # number of iterations to run
     
     p_recovery = opts.get('p_recovery', 0.)   # probability of node recovering
@@ -131,6 +158,9 @@ def run_rewire(mx_init, is_infected_init, benefit_function, opts={}):
     mean_degree  = []
     mean_degree_inf = []
     assortativity = []
+    historical_mx = []
+    historical_is_infected = []
+    num_link_types = []
     time_infected = np.zeros(N, dtype='int')-1
     time_infected[is_infected_init] = 0
 
@@ -152,8 +182,19 @@ def run_rewire(mx_init, is_infected_init, benefit_function, opts={}):
         num_infected.append(num_global_infected)
         num_rewired.append(c_rewired)
         
+        if opts.get('save_is_infected', False):
+            historical_is_infected.append(is_infected.copy())
+        
+        if opts.get('save_mxs', False):
+            historical_mx.append(mx.copy())
+            
+        SIlinks = mx[is_infected,:][:,~is_infected].sum()
+        IIlinks = mx[is_infected,:][:,is_infected].sum()/2.0
+        SSlinks = mx[~is_infected,:][:,~is_infected].sum()/2.0
+        num_link_types.append([SIlinks, IIlinks, SSlinks])
+        
         if True:
-            if (np.random.random() < p_rewire):
+            if benefit_function is not None and (np.random.random() < p_rewire):
                 # choose "ego" node to rewire
                 node = np.random.choice(N)
                 if not iterate_only_infected or is_infected[node]:
@@ -234,10 +275,10 @@ def run_rewire(mx_init, is_infected_init, benefit_function, opts={}):
                             log_ps += [-np.inf, -np.inf]
 
                         log_ps = np.array(log_ps)
-                        if beta == 0:
+                        if strength == 0:
                             log_ps[:] = 0
                         else:
-                            log_ps *= beta
+                            log_ps *= strength
 
                         if do_only_beneficial:
                             log_ps[log_ps<=1e-8] = -np.inf
@@ -385,7 +426,10 @@ def run_rewire(mx_init, is_infected_init, benefit_function, opts={}):
         mean_degree_inf = mean_degree_inf,
         assortativity = assortativity,
         is_infected = is_infected,
+        num_link_types = num_link_types, # SI, II, SS
         mx = mx,
+        historical_mx = historical_mx,
+        historical_is_infected=historical_is_infected,
         rewire_types=rewire_types,
         rewire_counts_list = rewire_counts_list,
         time_infected=time_infected,
